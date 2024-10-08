@@ -1,10 +1,17 @@
+import bison/bson
+import gametime/common/datastore
+import gametime/web
+import gleam/erlang/process
+import gleam/http.{Get}
+import gleam/option
+import gleam/result
+import gleam/string_builder
+import mungo
+import mungo/client
 import simplifile
 import wisp.{type Request, type Response}
-import gleam/string_builder
-import gleam/http.{Get}
-import gametime/web
 
-pub fn handle_request(req: Request) -> Response {
+pub fn handle_request(req: Request, context: web.Context) -> Response {
   use req <- web.middleware(req)
 
   // Wisp doesn't have a special router abstraction, instead we recommend using
@@ -14,6 +21,8 @@ pub fn handle_request(req: Request) -> Response {
   case wisp.path_segments(req) {
     // This matches `/`.
     [] -> home_page(req)
+
+    ["rooms", room_id] -> join_room(req, room_id, context)
 
     // This matches `/yuh`.
     ["yuh"] -> yuh(req)
@@ -27,13 +36,21 @@ pub fn handle_request(req: Request) -> Response {
   }
 }
 
+fn join_room(req: Request, room_id: String, context: web.Context) -> Response {
+  //datastore.get_room()
+
+  wisp.not_found()
+  //List(#(String
+}
 
 fn home_page(req: Request) -> Response {
   // The home page can only be accessed via GET requests, so this middleware is
   // used to return a 405: Method Not Allowed response for all other methods.
   use <- wisp.require_method(req, Get)
 
-  let html = string_builder.from_string("
+  let html =
+    string_builder.from_string(
+      "
 <!DOCTYPE html>
 <html>
     <head>
@@ -46,7 +63,8 @@ fn home_page(req: Request) -> Response {
         <div id='content'></div>
     </body>
 </html>
-  ")
+  ",
+    )
 
   wisp.ok()
   |> wisp.html_body(html)
@@ -59,7 +77,6 @@ fn yuh(req: Request) -> Response {
   wisp.ok()
   |> wisp.html_body(html)
 }
-
 
 fn show_comment(req: Request, id: String) -> Response {
   use <- wisp.require_method(req, Get)

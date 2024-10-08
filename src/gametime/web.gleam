@@ -1,4 +1,11 @@
+import gleam/erlang/process
+import mungo/client
+import mungo/error
 import wisp
+
+pub type Context {
+  Context(mongo_client: process.Subject(client.Message))
+}
 
 pub fn middleware(
   req: wisp.Request,
