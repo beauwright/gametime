@@ -17,7 +17,6 @@ fn start_server(current_dir_path: String) {
 
   let web_context =
     web.Context(tagg_config.Tagg(filepath.join(current_dir_path, "web"), tag_config))
-
   // This sets the logger to print INFO level logs, and other sensible defaults
   // for a web application.
   wisp.configure_logger()
