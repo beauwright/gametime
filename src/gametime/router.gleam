@@ -1,10 +1,12 @@
 import simplifile
+import cx
+import gametime/web.{type Context}
 import wisp.{type Request, type Response}
 import gleam/string_builder
 import gleam/http.{Get}
-import gametime/web
+import tagg
 
-pub fn handle_request(req: Request) -> Response {
+pub fn handle_request(req: Request, web_context: Context) -> Response {
   use req <- web.middleware(req)
 
   // Wisp doesn't have a special router abstraction, instead we recommend using
@@ -13,7 +15,7 @@ pub fn handle_request(req: Request) -> Response {
   //
   case wisp.path_segments(req) {
     // This matches `/`.
-    [] -> home_page(req)
+    [] -> home_page(req, web_context)
 
     // This matches `/yuh`.
     ["yuh"] -> yuh(req)
@@ -28,34 +30,30 @@ pub fn handle_request(req: Request) -> Response {
 }
 
 
-fn home_page(req: Request) -> Response {
+fn home_page(req: Request, web_context: Context) -> Response {
   // The home page can only be accessed via GET requests, so this middleware is
   // used to return a 405: Method Not Allowed response for all other methods.
   use <- wisp.require_method(req, Get)
 
-  let html = string_builder.from_string("
-<!DOCTYPE html>
-<html>
-    <head>
-        <script src='https://unpkg.com/htmx.org@2.0.3' integrity='sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq' crossorigin='anonymous'></script>
-    </head>
-    <body>
-        <button hx-get='/yuh' hx-target='#content'>
-            Hello!
-        </button>
-        <div id='content'></div>
-    </body>
-</html>
-  ")
+  let context = cx.dict()
 
-  wisp.ok()
-  |> wisp.html_body(html)
+  case tagg.render(web_context.tagg, "dashboard.html", context) {
+    Ok(html) -> {
+      wisp.ok()
+      |> wisp.html_body(string_builder.from_string(html))
+    }
+    Error(_) -> wisp.internal_server_error()
+  }
 }
 
 fn yuh(req: Request) -> Response {
   use <- wisp.require_method(req, Get)
 
-  let html = string_builder.from_string("yuh")
+  let html = string_builder.from_string("
+  <h1 class='text-lg font-medium'>
+    yuh
+  </h1>
+  ")
   wisp.ok()
   |> wisp.html_body(html)
 }

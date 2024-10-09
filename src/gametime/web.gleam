@@ -1,4 +1,9 @@
 import wisp
+import tagg_config.{type Tagg}
+
+pub type Context {
+  Context(tagg: Tagg)
+}
 
 pub fn middleware(
   req: wisp.Request,
