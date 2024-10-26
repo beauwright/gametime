@@ -4,7 +4,8 @@
     "nodejs@20.17.0",
     "gleam@1.5.1",
     "rebar3@3.24.0",
-    "erlang_27@27.0.1"
+    "erlang_27@27.0.1",
+    "go@1.23.1"
   ],
   "shell": {
     "init_hook": [
