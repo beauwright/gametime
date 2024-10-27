@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./dist/main"
-  cmd = "go build -o ./dist/main ./cmd/gametime/*.go"
+  cmd = "go build -o ./dist/main ./src/*.go"
   delay = 1000
   exclude_dir = ["assets", "dist", "vendor", "testdata"]
   exclude_file = []

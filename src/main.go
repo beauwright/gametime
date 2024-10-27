@@ -10,7 +10,7 @@ import (
 
 
 func main() {
-    templateEngine := html.New("./cmd/gametime/html/", ".html")
+    templateEngine := html.New("./html/", ".html")
     sessionStore := session.New()
     app := fiber.New(fiber.Config{
         Views: templateEngine,

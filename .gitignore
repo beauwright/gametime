@@ -18,3 +18,4 @@ go.work.sum
 # Other thingies
 dist/
 .devbox/
+tmp/
