@@ -1,0 +1,30 @@
+<style>
+
+    .active {
+        color: red;
+    }
+
+</style>
+<div>
+    <p>Hia! Your lobby ID is: {{.ID}}</p>
+    <p>Red indicates an active clock</p>
+    <p>Clicking the active clock makes a POST request to /clock/press/:clockID</p>
+    <p>Not a built endpoint yet, but imagine it does some logic to update the data model, advancing positions, and then re-rendering the clock</p>
+
+    {{range .State.Clocks}}
+        <br>
+        <br>
+
+        <button
+            {{if eq .Position $.State.ActivePosition}}
+                hx-post="/clock/press/{{.ID}}"
+                class="active"
+            {{end}}
+            >Clock {{.TimeRemaining}}</button>
+
+        <br>
+        <br>
+    {{end}}
+
+    <button hx-get="/start" hx-push-url="true">Go Back</button>
+</div>

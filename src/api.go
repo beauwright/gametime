@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
-        "gametime/internal/utils"
+	"gametime/internal/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/segmentio/ksuid"
 )
 
@@ -48,6 +48,8 @@ func (ac ApiClock) toClock(position int) Clock {
 }
 
 type GameState struct {
+    ActivePosition int
+    NextPosition int
     Clocks []Clock
 }
 
@@ -75,7 +77,8 @@ func RegisterAPI(app *fiber.App, sessionStore *session.Store) GametimeAPI {
     app.Get("/", gapi.index)
     app.Get("/start", gapi.getStart)
     app.Post("/start", gapi.postStart)
-    app.Get("/lobby/:lobbyId/view", gapi.getLobbyView)
+    app.Get("/lobby/:lobbyId/view", gapi.getLobbyViewSelect)
+    app.Get("/lobby/:lobbyId/view/:viewId", gapi.getLobbyView)
 
     return gapi
 }
@@ -125,6 +128,8 @@ func (g* GametimeAPI) postStart(c *fiber.Ctx) error {
     lobby := Lobby{
         ID: newLobbyId,
         State: GameState{
+            ActivePosition: dbClocks[0].Position,
+            NextPosition: dbClocks[1].Position,
             Clocks: dbClocks,
         },
         Config: GameConfig{},
@@ -152,7 +157,7 @@ func (g* GametimeAPI) postStart(c *fiber.Ctx) error {
 
 }
 
-func (g* GametimeAPI) getLobbyView(c *fiber.Ctx) error {
+func (g* GametimeAPI) getLobbyViewSelect(c *fiber.Ctx) error {
     lobbyId := c.Params("lobbyId")
 
     clockSlice := make([]Clock, 0)
@@ -184,6 +189,44 @@ func (g* GametimeAPI) getLobbyView(c *fiber.Ctx) error {
     }
     log.Println(lobby)
 
+    return c.Render("pages/lobby/select", lobby, "layouts/main")
+}
 
-    return c.Render("pages/lobby/view", lobby, "layouts/main")
+func (g* GametimeAPI) getLobbyView(c *fiber.Ctx) error {
+    lobbyId := c.Params("lobbyId")
+    viewId := c.Params("viewId")
+
+    clockSlice := make([]Clock, 0)
+
+    clockSlice = append(clockSlice,
+        Clock{
+            ID: ksuid.New().String(),
+            Name: "Hia",
+            Position: 0,
+            Increment: time.Second * 15,
+            TimeRemaining: time.Second * 300,
+        },
+        Clock{
+            ID: ksuid.New().String(),
+            Name: "Fren",
+            Position: 1,
+            Increment: time.Second * 30,
+            TimeRemaining: time.Second * 600,
+        },
+    )
+
+    // TODO: Load from datastore
+    lobby := Lobby{
+        ID: lobbyId,
+        State: GameState{
+            ActivePosition: clockSlice[0].Position,
+            NextPosition: clockSlice[1].Position,
+            Clocks: clockSlice,
+        },
+        Config: GameConfig{},
+    }
+    log.Println(lobby)
+
+    view := fmt.Sprintf("pages/lobby/view/%s", viewId)
+    return c.Render(view, lobby, "layouts/main")
 }
