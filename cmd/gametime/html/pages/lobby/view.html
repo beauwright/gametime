@@ -1,0 +1,9 @@
+<div>Hia! Your lobby ID is: {{.ID}}</div>
+
+{{range .State.Clocks}}
+    <br>
+    <br>
+    <div>{{.}}</div>
+{{end}}
+
+<button hx-get="/start" hx-push-url="true">Go Back</button>

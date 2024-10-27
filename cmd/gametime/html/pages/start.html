@@ -1,0 +1,17 @@
+<div id="error">{{.Error}}</div>
+<form hx-post="/start">
+    <div>
+        <input type="text" name="Clocks.0.Name" value="Hia">
+        <input type="number" name="Clocks.0.Increment" value="15">
+        <input type="number" name="Clocks.0.InitialTime" value="10">
+    </div>
+    <div>
+        <input type="text" name="Clocks.1.Name" value="Fren">
+        <input type="number" name="Clocks.1.Increment" value="30">
+        <input type="number" name="Clocks.1.InitialTime" value="25">
+    </div>
+
+    <button type="submit" name="DemoRedirect" value="true">Submit With Redirect</button>
+    <button type="submit" name="DemoRedirect" value="false">Submit No Redirect</button>
+</form>
+

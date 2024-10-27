@@ -1,6 +1,54 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "air@1.52.3": {
+      "last_modified": "2024-10-13T23:44:06Z",
+      "resolved": "github:NixOS/nixpkgs/d4f247e89f6e10120f911e2e2d2254a050d0f732#air",
+      "source": "devbox-search",
+      "version": "1.52.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/rgh4bf09wirba0yy01y2y6igkkfpji0l-air-1.52.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/rgh4bf09wirba0yy01y2y6igkkfpji0l-air-1.52.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/7lwy3aa8n68qi0rp1lfxfzwcq9wma2gk-air-1.52.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/7lwy3aa8n68qi0rp1lfxfzwcq9wma2gk-air-1.52.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wn6abxmf5f541na8dskilgx1va5sag5b-air-1.52.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/wn6abxmf5f541na8dskilgx1va5sag5b-air-1.52.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/my624kdikhj45bnx7124aa6x1pc0g4y4-air-1.52.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/my624kdikhj45bnx7124aa6x1pc0g4y4-air-1.52.3"
+        }
+      }
+    },
     "erlang_27@27.0.1": {
       "last_modified": "2024-09-28T02:58:32Z",
       "resolved": "github:NixOS/nixpkgs/4471f9f67fe0f95f5fec4cc2ebac59fe32af2b62#erlang_27",
