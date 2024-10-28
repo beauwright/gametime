@@ -48,8 +48,8 @@ func (ac ApiClock) toClock(position int) Clock {
 }
 
 type GameState struct {
-    ActivePosition int
-    NextPosition int
+    ActiveClockID string
+    NextClockID string
     Clocks []Clock
 }
 
@@ -128,8 +128,8 @@ func (g* GametimeAPI) postStart(c *fiber.Ctx) error {
     lobby := Lobby{
         ID: newLobbyId,
         State: GameState{
-            ActivePosition: dbClocks[0].Position,
-            NextPosition: dbClocks[1].Position,
+            ActiveClockID: dbClocks[0].ID,
+            NextClockID: dbClocks[1].ID,
             Clocks: dbClocks,
         },
         Config: GameConfig{},
@@ -204,7 +204,7 @@ func (g* GametimeAPI) getLobbyView(c *fiber.Ctx) error {
             Name: "Hia",
             Position: 0,
             Increment: time.Second * 15,
-            TimeRemaining: time.Second * 300,
+            TimeRemaining: time.Second * 30,
         },
         Clock{
             ID: ksuid.New().String(),
@@ -219,8 +219,8 @@ func (g* GametimeAPI) getLobbyView(c *fiber.Ctx) error {
     lobby := Lobby{
         ID: lobbyId,
         State: GameState{
-            ActivePosition: clockSlice[0].Position,
-            NextPosition: clockSlice[1].Position,
+            ActiveClockID: clockSlice[0].ID,
+            NextClockID: clockSlice[1].ID,
             Clocks: clockSlice,
         },
         Config: GameConfig{},

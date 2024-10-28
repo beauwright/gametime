@@ -12,11 +12,11 @@
     <p>Not a built endpoint yet, but imagine it does some logic to update the data model, advancing positions, and then re-rendering the clock</p>
 
     {{range .State.Clocks}}
-        <br>
-        <br>
 
         <button
-            {{if eq .Position $.State.ActivePosition}}
+            id="{{.ID}}"
+            value="{{.TimeRemaining.Milliseconds}}"
+            {{if eq .ID $.State.ActiveClockID}}
                 hx-post="/clock/press/{{.ID}}"
                 class="active"
             {{end}}
@@ -28,3 +28,37 @@
 
     <button hx-get="/start" hx-push-url="true">Go Back</button>
 </div>
+<script>
+    function clockDisplay(currentMs) {
+        const currentSeconds = currentMs / 1000;
+        const min = Math.floor(currentSeconds / 60);
+        const seconds = Math.floor(currentSeconds % 60);
+
+        if (min === 0 && seconds < 10) {
+            // Gets the first decimal place value
+            const fractionalSeconds = Math.floor((currentMs - (seconds * 1000))/100);
+            return `${min}:${seconds}.${fractionalSeconds}`
+        }
+
+        return `${min}:${seconds}`
+    }
+
+    function advanceClocks(evt) {
+        const activeClock = document.getElementById("{{.State.ActiveClockID}}");
+
+        if (typeof activeClock ==="undefined") {
+            GlobalTimer.removeEventListener("time-passing", advanceClocks);
+            return;
+        }
+
+        const currentMs = parseInt(activeClock.value);
+        const newMs = currentMs - evt.detail;
+
+        activeClock.value = newMs;
+        activeClock.innerHTML = clockDisplay(newMs);
+    }
+
+    window.addEventListener("load", (evt) => {
+        GlobalTimer.addEventListener("time-passing", advanceClocks);
+    });
+</script>

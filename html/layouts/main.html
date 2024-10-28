@@ -6,6 +6,16 @@
 
     <!-- Uncomment to enable tailwindcss -->
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+    <script>
+        const INTERVAL_MS = 100;
+
+        var GlobalTimer = new EventTarget();
+        setInterval(() => {
+            const timePassing = new CustomEvent("time-passing", { "detail": INTERVAL_MS });
+            GlobalTimer.dispatchEvent(timePassing);
+        }, INTERVAL_MS);
+    </script>
 </head>
 
 <body>
