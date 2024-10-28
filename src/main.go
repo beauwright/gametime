@@ -8,15 +8,14 @@ import (
 	"github.com/gofiber/template/html/v2"
 )
 
-
 func main() {
-    templateEngine := html.New("./html/", ".html")
-    sessionStore := session.New()
-    app := fiber.New(fiber.Config{
-        Views: templateEngine,
-    })
+	templateEngine := html.New("./html/", ".html")
+	sessionStore := session.New()
+	app := fiber.New(fiber.Config{
+		Views: templateEngine,
+	})
 
-    RegisterAPI(app, sessionStore)
+	RegisterAPI(app, sessionStore)
 
-    log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":3000"))
 }
