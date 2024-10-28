@@ -3,7 +3,8 @@
   "packages": [
     "go@1.23.1",
     "air@1.52.3",
-    "prettierd@0.25.3"
+    "prettierd@0.25.3",
+    "nodePackages.prettier@3.3.3"
   ],
   "shell": {
     "scripts": {

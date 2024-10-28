@@ -97,6 +97,54 @@
         }
       }
     },
+    "nodePackages.prettier@3.3.3": {
+      "last_modified": "2024-10-13T23:44:06Z",
+      "resolved": "github:NixOS/nixpkgs/d4f247e89f6e10120f911e2e2d2254a050d0f732#nodePackages.prettier",
+      "source": "devbox-search",
+      "version": "3.3.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/1jczcm6dd1q4zvlspip8j18lfmgk3ggn-prettier-3.3.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/1jczcm6dd1q4zvlspip8j18lfmgk3ggn-prettier-3.3.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2nsmh6v71g47ksvspvn83r03ws4h6p82-prettier-3.3.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/2nsmh6v71g47ksvspvn83r03ws4h6p82-prettier-3.3.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/php6jk39i8b7ma912iwz5pjkb2lqj793-prettier-3.3.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/php6jk39i8b7ma912iwz5pjkb2lqj793-prettier-3.3.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/57lc7a9i4zbz71lqfmqlvqxlj4ci2wvw-prettier-3.3.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/57lc7a9i4zbz71lqfmqlvqxlj4ci2wvw-prettier-3.3.3"
+        }
+      }
+    },
     "prettierd@0.25.3": {
       "last_modified": "2024-10-13T23:44:06Z",
       "resolved": "github:NixOS/nixpkgs/d4f247e89f6e10120f911e2e2d2254a050d0f732#prettierd",
