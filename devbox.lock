@@ -96,6 +96,54 @@
           "store_path": "/nix/store/mi0ybwsm6pmxzv9hsm6bcbqaq1pkf8wh-go-1.23.1"
         }
       }
+    },
+    "prettierd@0.25.3": {
+      "last_modified": "2024-10-13T23:44:06Z",
+      "resolved": "github:NixOS/nixpkgs/d4f247e89f6e10120f911e2e2d2254a050d0f732#prettierd",
+      "source": "devbox-search",
+      "version": "0.25.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/zjcydc6qkhqbsarccgzs9p0q4gbw7bgz-fsouza-prettierd-0.25.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/zjcydc6qkhqbsarccgzs9p0q4gbw7bgz-fsouza-prettierd-0.25.3"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/azkdmf9v7pcckxxbbyb8xj6barwvyn1a-fsouza-prettierd-0.25.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/azkdmf9v7pcckxxbbyb8xj6barwvyn1a-fsouza-prettierd-0.25.3"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/mfh53gbnmyllzdqhknwmlykb9jlda1bm-fsouza-prettierd-0.25.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/mfh53gbnmyllzdqhknwmlykb9jlda1bm-fsouza-prettierd-0.25.3"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/bbx2k5jb9bw4vknngnhdlsphf1zlrl7v-fsouza-prettierd-0.25.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/bbx2k5jb9bw4vknngnhdlsphf1zlrl7v-fsouza-prettierd-0.25.3"
+        }
+      }
     }
   }
 }

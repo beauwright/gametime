@@ -1,27 +1,29 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-    <script src="https://unpkg.com/htmx.org@2.0.3" integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq" crossorigin="anonymous"></script>
+  <head>
+    <script
+      src="https://unpkg.com/htmx.org@2.0.3"
+      integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
+      crossorigin="anonymous"
+    ></script>
 
     <!-- Uncomment to enable tailwindcss -->
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
 
     <script>
-        const INTERVAL_MS = 100;
+      const INTERVAL_MS = 100;
 
-        var GlobalTimer = new EventTarget();
-        setInterval(() => {
-            const timePassing = new CustomEvent("time-passing", { "detail": INTERVAL_MS });
-            GlobalTimer.dispatchEvent(timePassing);
-        }, INTERVAL_MS);
+      const GlobalTimer = new EventTarget();
+      setInterval(() => {
+        const timePassing = new CustomEvent("time-passing", {
+          detail: INTERVAL_MS,
+        });
+        GlobalTimer.dispatchEvent(timePassing);
+      }, INTERVAL_MS);
     </script>
-</head>
+  </head>
 
-<body>
-    <div id="content" hx-target="#content">
-        {{embed}}
-    </div>
-</body>
-
+  <body>
+    <div id="content" hx-target="#content">{{embed}}</div>
+  </body>
 </html>
