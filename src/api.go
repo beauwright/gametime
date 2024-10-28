@@ -204,7 +204,7 @@ func (g *GametimeAPI) getLobbyView(c *fiber.Ctx) error {
 			Name:          "Fren",
 			Position:      1,
 			Increment:     time.Second * 30,
-			TimeRemaining: time.Second * 600,
+			    TimeRemaining: time.Second * 600,
 		},
 	)
 
