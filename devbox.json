@@ -1,20 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.12.0/.schema/devbox.schema.json",
   "packages": [
-    "nodejs@20.17.0",
-    "gleam@1.5.1",
-    "rebar3@3.24.0",
-    "erlang_27@27.0.1",
     "go@1.23.1",
     "air@1.52.3"
   ],
   "shell": {
-    "init_hook": [
-      "echo 'Welcome to devbox!' > /dev/null"
-    ],
     "scripts": {
-      "test": [
-        "echo \"Error: no test specified\" && exit 1"
+      "dev": [
+        "air"
       ]
     }
   }
