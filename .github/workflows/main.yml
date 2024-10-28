@@ -3,7 +3,7 @@ name: Format Check
 on: push
 
 jobs:
-  test:
+  format-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
