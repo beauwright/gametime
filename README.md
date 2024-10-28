@@ -19,26 +19,34 @@ devbox run <script>
 ## Scripts
 Scripts are custom commands that can be run using this project's environment. This project has the following scripts:
 
-* [test](#devbox-run-test)
+* [dev](#devbox-run-dev)
+* [fmt](#devbox-run-fmt)
 
 ## Shell Init Hook
 The Shell Init Hook is a script that runs whenever the devbox environment is instantiated. It runs 
 on `devbox shell` and on `devbox run`.
 ```sh
-test -z $DEVBOX_COREPACK_ENABLED || corepack enable --install-directory "/home/breadcat/Code/gametime/.devbox/virtenv/nodejs/corepack-bin/"
-test -z $DEVBOX_COREPACK_ENABLED || export PATH="/home/breadcat/Code/gametime/.devbox/virtenv/nodejs/corepack-bin/:$PATH"
-echo 'Welcome to devbox!' > /dev/null
+
 ```
 
 ## Packages
 
-* [nodejs@20.17.0](https://www.nixhub.io/packages/nodejs)
+* [go@1.23.1](https://www.nixhub.io/packages/go)
+* [air@1.52.3](https://www.nixhub.io/packages/air)
+* [prettierd@0.25.3](https://www.nixhub.io/packages/prettierd)
 
 ## Script Details
 
-### devbox run test
+### devbox run dev
 ```sh
-echo "Error: no test specified" && exit 1
+air
+```
+&ensp;
+
+### devbox run fmt
+```sh
+gofmt -w **/*.go
+prettier -w **/*.html
 ```
 &ensp;
 
