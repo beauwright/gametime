@@ -52,7 +52,7 @@
   function advanceClocks(evt) {
     const activeClock = document.getElementById("{{.State.ActiveClockID}}");
 
-    if (typeof activeClock === "undefined") {
+    if (!activeClock) {
       GlobalTimer.removeEventListener("time-passing", advanceClocks);
       return;
     }
@@ -64,7 +64,7 @@
     activeClock.innerHTML = clockDisplay(newMs);
   }
 
-  window.addEventListener("load", (evt) => {
+  htmx.onLoad((evt) => {
     GlobalTimer.addEventListener("time-passing", advanceClocks);
   });
 </script>
