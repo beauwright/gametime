@@ -1,0 +1,42 @@
+<style>
+  .active {
+    color: red;
+  }
+</style>
+<div id="sse-elem" sse-connect="/sse?view=head-to-head" sse-swap="lobbyUpdate">
+  {{embed}}
+</div>
+<script>
+  function clockDisplay(currentMs) {
+    const currentSeconds = currentMs / 1000;
+    const min = Math.floor(currentSeconds / 60);
+    const seconds = Math.floor(currentSeconds % 60);
+
+    if (min === 0 && seconds < 10) {
+      // Gets the first decimal place value
+      const fractionalSeconds = Math.floor((currentMs - seconds * 1000) / 100);
+      return `${min}:${seconds}.${fractionalSeconds}`;
+    }
+
+    return `${min}:${seconds}`;
+  }
+
+  function advanceClocks(evt) {
+    const activeClock = htmx.find(".active");
+
+    if (!activeClock) {
+      GlobalTimer.removeEventListener("time-passing", advanceClocks);
+      return;
+    }
+
+    const currentMs = parseInt(activeClock.value);
+    const newMs = currentMs - evt.detail;
+
+    activeClock.value = newMs;
+    activeClock.innerHTML = clockDisplay(newMs);
+  }
+
+  htmx.onLoad((evt) => {
+    GlobalTimer.addEventListener("time-passing", advanceClocks);
+  });
+</script>

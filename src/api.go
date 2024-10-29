@@ -168,7 +168,7 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 				}
 
 				result := buff.String()
-				result = strings.ReplaceAll(result, "\n", "")
+				result = strings.ReplaceAll(result, "\n", " ")
 				fmt.Fprintf(w, "event: lobbyUpdate\ndata: %s\n\n", result)
 
 				err := w.Flush()
@@ -302,5 +302,5 @@ func (g *GametimeAPI) getLobbyView(c *fiber.Ctx) error {
 	log.Println(lobby)
 
 	view := fmt.Sprintf("pages/lobby/view/%s", viewId)
-	return c.Render(view, lobby, "layouts/main")
+	return c.Render(view, lobby, "layouts/main", "layouts/viewcontainer")
 }

@@ -1,78 +1,31 @@
-<style>
-  .active {
-    color: red;
-  }
-</style>
-<div id="sse-elem" sse-connect="/sse?view=head-to-head" sse-swap="lobbyUpdate">
-  <p>Hia! Your lobby ID is: {{.ID}}</p>
-  <p>Red indicates an active clock</p>
-  <p>Clicking the active clock makes a POST request to /clock/press/:clockID</p>
-  <p>
-    This will send out an event to all clients (soon scoped to lobby), having
-    them refresh their lobby state
-  </p>
+<p>Hia! Your lobby ID is: {{.ID}}</p>
+<p>Red indicates an active clock</p>
+<p>Clicking the active clock makes a POST request to /clock/press/:clockID</p>
+<p>
+  This will send out an event to all clients (soon scoped to lobby), having them
+  refresh their lobby state
+</p>
 
-  {{range .State.Clocks}}
+{{range .State.Clocks}}
 
-  <button
-    id="{{.ID}}"
-    value="{{.TimeRemaining.Milliseconds}}"
-    {{if
-    eq
-    .ID
-    $.State.ActiveClockID}}
-    hx-post="/clock/press/{{.ID}}"
-    hx-swap="none"
-    class="active"
-    {{end}}
-  >
-    Clock {{.TimeRemaining}}
-  </button>
-
-  <br />
-  <br />
+<button
+  id="{{.ID}}"
+  value="{{.TimeRemaining.Milliseconds}}"
+  {{if
+  eq
+  .ID
+  $.State.ActiveClockID}}
+  hx-post="/clock/press/{{.ID}}"
+  hx-swap="none"
+  class="active"
   {{end}}
+>
+  Clock {{.TimeRemaining}}
+</button>
 
-  <button hx-get="/start" hx-push-url="true">Go Back</button>
-</div>
-<script>
-  function clockDisplay(currentMs) {
-    const currentSeconds = currentMs / 1000;
-    const min = Math.floor(currentSeconds / 60);
-    const seconds = Math.floor(currentSeconds % 60);
+<br />
+<br />
+{{end}}
 
-    if (min === 0 && seconds < 10) {
-      // Gets the first decimal place value
-      const fractionalSeconds = Math.floor((currentMs - seconds * 1000) / 100);
-      return `${min}:${seconds}.${fractionalSeconds}`;
-    }
-
-    return `${min}:${seconds}`;
-  }
-
-  function advanceClocks(evt) {
-    const activeClock = document.getElementById("{{.State.ActiveClockID}}");
-
-    if (!activeClock) {
-      GlobalTimer.removeEventListener("time-passing", advanceClocks);
-      return;
-    }
-
-    const currentMs = parseInt(activeClock.value);
-    const newMs = currentMs - evt.detail;
-
-    activeClock.value = newMs;
-    activeClock.innerHTML = clockDisplay(newMs);
-  }
-
-  htmx.onLoad((evt) => {
-    // BUG: If you mash the active clock button, we dont remove the listeners correctly
-    // Perhaps we can solve this with an hx-on attr on the clock? When its removed I assume its unregistered
-    // Maybe we could also make advanceClocks stateful. Rather than getting the amount of time passed from the time-passing event,
-    // it can keep track of when it last received the event, and use the difference to update. Could lead to unintended consequences.
-    GlobalTimer.addEventListener("time-passing", advanceClocks);
-    htmx.on("htmx:beforeSwap", (evt) =>
-      GlobalTimer.removeEventListener("time-passing", advanceClocks),
-    );
-  });
-</script>
+<!-- <button hx-get="/start" hx-push-url="true">Go Back</button> -->
+<a href="/start">Go Back</a>
