@@ -33,12 +33,20 @@ type ApiClock struct {
 	InitialTime time.Duration `form:"initialTime"`
 }
 
-func (ac ApiClock) toClock(position int) datastore.Clock {
+func (ac ApiClock) toClock() datastore.Clock {
+	eventLog := make([]datastore.ClockEvent, 1)
+	eventLog[0] = datastore.ClockEvent{
+		EventType:     datastore.STOP,
+		Timestamp:     time.Now(),
+		TimeRemaining: time.Second * ac.InitialTime,
+	}
+
 	return datastore.Clock{
 		ID:            ksuid.New().String(),
 		Name:          ac.Name,
-		Position:      position,
+		EventLog:      eventLog,
 		Increment:     time.Second * ac.Increment,
+		InitialTime:   time.Second * ac.InitialTime,
 		TimeRemaining: time.Second * ac.InitialTime,
 	}
 }
@@ -104,7 +112,19 @@ func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
 		return err
 	}
 
-	// TODO: Persist state, how do we effectively track time elapsed?
+	// TODO: Verify lobby is running, not paused
+
+	_, clock := lobby.ClockByID(clockID)
+	if clock.State() != datastore.RUNNING {
+		return errors.New("clock is not running")
+	}
+
+	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_, err = g.db.AdvanceLobby(ctx, clockID)
+	if err != nil {
+		return err
+	}
 
 	for _, ch := range g.sseConnections[lobby.ID] {
 		ch <- 0
@@ -126,9 +146,15 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	_, err := g.db.GetLobby(ctx, lobbyID)
+	lobby, err := g.db.GetLobby(ctx, lobbyID)
 	if err != nil {
 		return err
+	}
+
+	if !lobby.State.Running {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		g.db.StartLobby(ctx, lobbyID)
 	}
 
 	ch := make(chan int)
@@ -204,7 +230,7 @@ func (g *GametimeAPI) postStart(c *fiber.Ctx) error {
 
 	newLobbyId := ksuid.New().String()
 
-	dbClocks := utils.MapWithIndex(clocks.Clocks, ApiClock.toClock)
+	dbClocks := utils.Map(clocks.Clocks, ApiClock.toClock)
 
 	lobby := datastore.Lobby{
 		ID: newLobbyId,
