@@ -53,6 +53,11 @@
   function advanceClocks(evt) {
     const activeClock = document.getElementById("{{.State.ActiveClockID}}");
 
+    if (!activeClock) {
+      GlobalTimer.removeEventListener("time-passing", advanceClocks);
+      return;
+    }
+
     const currentMs = parseInt(activeClock.value);
     const newMs = currentMs - evt.detail;
 
