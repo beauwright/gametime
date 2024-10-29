@@ -15,7 +15,7 @@ func main() {
 		Views: templateEngine,
 	})
 
-	RegisterAPI(app, sessionStore)
+	RegisterAPI(app, templateEngine, sessionStore)
 
 	log.Fatal(app.Listen(":3000"))
 }

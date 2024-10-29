@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"gametime/internal/utils"
@@ -10,11 +13,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/gofiber/template/html/v2"
 	"github.com/segmentio/ksuid"
+	"github.com/valyala/fasthttp"
 )
 
+type LobbyID string
+
 type GametimeAPI struct {
-	sessionStore *session.Store
+	sessionStore   *session.Store
+	sseConnections map[LobbyID][]chan<- int
+	viewEngine     *html.Engine
 }
 
 type Clock struct {
@@ -60,10 +69,36 @@ type Lobby struct {
 	Config GameConfig
 }
 
-func RegisterAPI(app *fiber.App, sessionStore *session.Store) GametimeAPI {
+var base = make([]Clock, 0)
+
+var clockSlice = append(base,
+	Clock{
+		ID:            ksuid.New().String(),
+		Name:          "Hia",
+		Position:      0,
+		Increment:     time.Second * 15,
+		TimeRemaining: time.Second * 30,
+	},
+	Clock{
+		ID:            ksuid.New().String(),
+		Name:          "Fren",
+		Position:      1,
+		Increment:     time.Second * 30,
+		TimeRemaining: time.Second * 600,
+	},
+)
+
+func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Store) GametimeAPI {
 	gapi := GametimeAPI{
-		sessionStore: sessionStore,
+
+		sessionStore:   sessionStore,
+		sseConnections: make(map[LobbyID][]chan<- int),
+		viewEngine:     engine,
 	}
+	fmt.Println("Uhhhh")
+
+	gapi.sseConnections["lobbyID"] = make([]chan<- int, 0)
+	fmt.Println("Yaaaah")
 
 	sessionStore.RegisterType(Lobby{})
 
@@ -77,6 +112,9 @@ func RegisterAPI(app *fiber.App, sessionStore *session.Store) GametimeAPI {
 	app.Post("/start", gapi.postStart)
 	app.Get("/lobby/:lobbyId/view", gapi.getLobbyViewSelect)
 	app.Get("/lobby/:lobbyId/view/:viewId", gapi.getLobbyView)
+	app.Post("/clock/press/:clockID", gapi.clockPress)
+
+	app.Get("/sse", gapi.sse)
 
 	return gapi
 }
@@ -85,6 +123,68 @@ func htmxLocationMiddleware(c *fiber.Ctx) error {
 	result := c.Next()
 
 	return result
+}
+
+func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
+	// TODO: Filter connections to current lobby, invoking only those
+	for _, ch := range g.sseConnections["lobbyID"] {
+		ch <- 0
+	}
+	return nil
+}
+
+func (g *GametimeAPI) sse(c *fiber.Ctx) error {
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+	c.Set("Transfer-Encoding", "chunked")
+
+	// TODO: Validate view exists
+	viewID := c.Query("view")
+	view := fmt.Sprintf("pages/lobby/view/%s", viewID)
+
+	ch := make(chan int)
+	// TODO: Dont use constant lobbyID here
+	g.sseConnections["lobbyID"] = append(g.sseConnections["lobbyID"], ch)
+
+	c.Status(fiber.StatusOK).Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
+		for {
+			select {
+			case <-ch:
+				lobby := Lobby{
+					ID: "lobbyID",
+					State: GameState{
+						ActiveClockID: clockSlice[0].ID,
+						NextClockID:   clockSlice[1].ID,
+						Clocks:        clockSlice,
+					},
+					Config: GameConfig{},
+				}
+
+				buff := bytes.NewBufferString("")
+				if err := g.viewEngine.Render(buff, view, lobby); err != nil {
+					fmt.Println(err)
+					return
+				}
+
+				result := buff.String()
+				result = strings.ReplaceAll(result, "\n", "")
+				fmt.Fprintf(w, "event: lobbyUpdate\ndata: %s\n\n", result)
+
+				err := w.Flush()
+				if err != nil {
+					// Refreshing page in web browser will establish a new
+					// SSE connection, but only (the last) one is alive, so
+					// dead connections must be closed here.
+					fmt.Printf("Error while flushing: %v. Closing http connection.\n", err)
+
+					break
+				}
+			}
+		}
+	}))
+
+	return nil
 }
 
 func (g *GametimeAPI) index(c *fiber.Ctx) error {
@@ -188,25 +288,6 @@ func (g *GametimeAPI) getLobbyViewSelect(c *fiber.Ctx) error {
 func (g *GametimeAPI) getLobbyView(c *fiber.Ctx) error {
 	lobbyId := c.Params("lobbyId")
 	viewId := c.Params("viewId")
-
-	clockSlice := make([]Clock, 0)
-
-	clockSlice = append(clockSlice,
-		Clock{
-			ID:            ksuid.New().String(),
-			Name:          "Hia",
-			Position:      0,
-			Increment:     time.Second * 15,
-			TimeRemaining: time.Second * 30,
-		},
-		Clock{
-			ID:            ksuid.New().String(),
-			Name:          "Fren",
-			Position:      1,
-			Increment:     time.Second * 30,
-			TimeRemaining: time.Second * 600,
-		},
-	)
 
 	// TODO: Load from datastore
 	lobby := Lobby{

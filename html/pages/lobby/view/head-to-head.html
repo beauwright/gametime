@@ -3,7 +3,7 @@
     color: red;
   }
 </style>
-<div>
+<div id="sse-elem" sse-connect="/sse?view=head-to-head" sse-swap="lobbyUpdate">
   <p>Hia! Your lobby ID is: {{.ID}}</p>
   <p>Red indicates an active clock</p>
   <p>Clicking the active clock makes a POST request to /clock/press/:clockID</p>
@@ -22,6 +22,7 @@
     .ID
     $.State.ActiveClockID}}
     hx-post="/clock/press/{{.ID}}"
+    hx-swap="none"
     class="active"
     {{end}}
   >
@@ -52,11 +53,6 @@
   function advanceClocks(evt) {
     const activeClock = document.getElementById("{{.State.ActiveClockID}}");
 
-    if (!activeClock) {
-      GlobalTimer.removeEventListener("time-passing", advanceClocks);
-      return;
-    }
-
     const currentMs = parseInt(activeClock.value);
     const newMs = currentMs - evt.detail;
 
@@ -66,5 +62,8 @@
 
   htmx.onLoad((evt) => {
     GlobalTimer.addEventListener("time-passing", advanceClocks);
+    htmx.on("htmx:beforeSwap", (evt) =>
+      GlobalTimer.removeEventListener("time-passing", advanceClocks),
+    );
   });
 </script>
