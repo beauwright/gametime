@@ -3,7 +3,11 @@
     color: red;
   }
 </style>
-<div id="sse-elem" sse-connect="/sse?view=head-to-head&lobbyID={{.ID}}" sse-swap="lobbyUpdate">
+<div
+  id="sse-elem"
+  sse-connect="/sse?view=head-to-head&lobbyID={{.ID}}"
+  sse-swap="lobbyUpdate"
+>
   {{embed}}
 </div>
 <script>

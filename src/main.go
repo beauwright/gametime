@@ -10,10 +10,10 @@ import (
 )
 
 func main() {
-        dbStore, err := datastore.New("mongodb://localhost:27017")
-        if err != nil {
-            log.Fatal(err)
-        }
+	dbStore, err := datastore.New("mongodb://localhost:27017")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	templateEngine := html.New("./html/", ".html")
 	sessionStore := session.New()

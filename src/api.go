@@ -22,7 +22,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-
 type ApiStart struct {
 	DemoRedirect bool       `form:"demoredirect"`
 	Clocks       []ApiClock `form:"clocks"`
@@ -48,9 +47,8 @@ type GametimeAPI struct {
 	sessionStore   *session.Store
 	sseConnections map[string][]chan<- int
 	viewEngine     *html.Engine
-        db *datastore.GametimeDB
+	db             *datastore.GametimeDB
 }
-
 
 func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Store, dbStore *datastore.GametimeDB) *GametimeAPI {
 	gapi := GametimeAPI{
@@ -58,7 +56,7 @@ func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Stor
 		sessionStore:   sessionStore,
 		sseConnections: make(map[string][]chan<- int),
 		viewEngine:     engine,
-                db: dbStore,
+		db:             dbStore,
 	}
 
 	gapi.sseConnections["lobbyID"] = make([]chan<- int, 0)
@@ -81,12 +79,12 @@ func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Stor
 }
 
 func (g *GametimeAPI) addSSEConnection(lobbyID string, ch chan<- int) {
-    _, ok := g.sseConnections[lobbyID]
-    if !ok {
-        g.sseConnections[lobbyID] = make([]chan<- int, 0)
-    }
+	_, ok := g.sseConnections[lobbyID]
+	if !ok {
+		g.sseConnections[lobbyID] = make([]chan<- int, 0)
+	}
 
-    g.sseConnections[lobbyID] = append(g.sseConnections[lobbyID], ch)
+	g.sseConnections[lobbyID] = append(g.sseConnections[lobbyID], ch)
 }
 
 func htmxLocationMiddleware(c *fiber.Ctx) error {
@@ -96,18 +94,17 @@ func htmxLocationMiddleware(c *fiber.Ctx) error {
 }
 
 func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
-        clockID := c.Params("clockID")
+	clockID := c.Params("clockID")
 
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-        lobby, err := g.db.GetLobbyByClock(ctx, clockID)
-        if err != nil{
-            return err
-        }
+	lobby, err := g.db.GetLobbyByClock(ctx, clockID)
+	if err != nil {
+		return err
+	}
 
-        // TODO: Persist state, how do we effectively track time elapsed?
-
+	// TODO: Persist state, how do we effectively track time elapsed?
 
 	for _, ch := range g.sseConnections[lobby.ID] {
 		ch <- 0
@@ -126,13 +123,13 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 	view := fmt.Sprintf("pages/lobby/view/%s", viewID)
 
 	lobbyID := c.Query("lobbyID")
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-        _, err := g.db.GetLobby(ctx, lobbyID)
-        if err != nil {
-            return err
-        }
+	_, err := g.db.GetLobby(ctx, lobbyID)
+	if err != nil {
+		return err
+	}
 
 	ch := make(chan int)
 	g.addSSEConnection(lobbyID, ch)
@@ -141,14 +138,13 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 		for {
 			select {
 			case <-ch:
-                                ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-                                defer cancel()
+				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
 
-                                lobby, err := g.db.GetLobby(ctx, lobbyID)
-                                if err != nil {
-                                    log.Println(err)
-                                }
-
+				lobby, err := g.db.GetLobby(ctx, lobbyID)
+				if err != nil {
+					log.Println(err)
+				}
 
 				buff := bytes.NewBufferString("")
 				if err := g.viewEngine.Render(buff, view, lobby); err != nil {
@@ -221,9 +217,9 @@ func (g *GametimeAPI) postStart(c *fiber.Ctx) error {
 	}
 	log.Println(lobby)
 
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
-        err = g.db.SaveLobby(ctx, lobby)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err = g.db.SaveLobby(ctx, lobby)
 
 	session.Set("lobbyId", newLobbyId)
 	session.Save()
@@ -245,15 +241,15 @@ func (g *GametimeAPI) postStart(c *fiber.Ctx) error {
 func (g *GametimeAPI) getLobbyViewSelect(c *fiber.Ctx) error {
 	lobbyId := c.Params("lobbyId")
 
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-        lobby, err := g.db.GetLobby(ctx, lobbyId)
-        if errors.Is(err, mongo.ErrNoDocuments) {
-            return c.Redirect("/start")
-        } else if err != nil {
-            log.Fatal(err)
-        }
+	lobby, err := g.db.GetLobby(ctx, lobbyId)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return c.Redirect("/start")
+	} else if err != nil {
+		log.Fatal(err)
+	}
 
 	return c.Render("pages/lobby/select", lobby, "layouts/main")
 }
@@ -262,15 +258,15 @@ func (g *GametimeAPI) getLobbyView(c *fiber.Ctx) error {
 	lobbyId := c.Params("lobbyId")
 	viewId := c.Params("viewId")
 
-        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-        defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-        lobby, err := g.db.GetLobby(ctx, lobbyId)
-        if errors.Is(err, mongo.ErrNoDocuments) {
-            return c.Redirect("/start")
-        } else if err != nil {
-            log.Fatal(err)
-        }
+	lobby, err := g.db.GetLobby(ctx, lobbyId)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return c.Redirect("/start")
+	} else if err != nil {
+		log.Fatal(err)
+	}
 
 	view := fmt.Sprintf("pages/lobby/view/%s", viewId)
 	return c.Render(view, lobby, "layouts/main", "layouts/viewcontainer")
