@@ -7,7 +7,10 @@
   <p>Hia! Your lobby ID is: {{.ID}}</p>
   <p>Red indicates an active clock</p>
   <p>Clicking the active clock makes a POST request to /clock/press/:clockID</p>
-  <p>This will send out an event to all clients (soon scoped to lobby), having them refresh their lobby state</p>
+  <p>
+    This will send out an event to all clients (soon scoped to lobby), having
+    them refresh their lobby state
+  </p>
 
   {{range .State.Clocks}}
 
