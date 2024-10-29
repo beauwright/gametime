@@ -4,12 +4,18 @@
     "go@1.23.1",
     "air@1.52.3",
     "prettierd@0.25.3",
-    "nodePackages.prettier@3.3.3"
+    "nodePackages.prettier@3.3.3",
+    "docker@27.3.1",
+    "docker-compose@2.29.7"
   ],
   "shell": {
     "scripts": {
       "dev": [
+        "docker-compose up -d",
         "air"
+      ],
+      "reset-data": [
+          "docker-compose down -v"
       ],
       "fmt": [
         "gofmt -w **/*.go",

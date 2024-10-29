@@ -49,6 +49,102 @@
         }
       }
     },
+    "docker-compose@2.29.7": {
+      "last_modified": "2024-10-13T23:44:06Z",
+      "resolved": "github:NixOS/nixpkgs/d4f247e89f6e10120f911e2e2d2254a050d0f732#docker-compose",
+      "source": "devbox-search",
+      "version": "2.29.7",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/25sdxy9ys1hh5vyirqmvm1kh7fynaafk-docker-compose-2.29.7",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/25sdxy9ys1hh5vyirqmvm1kh7fynaafk-docker-compose-2.29.7"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/hkzqqix9sj8dpavlsrws01kxc6dii46r-docker-compose-2.29.7",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/hkzqqix9sj8dpavlsrws01kxc6dii46r-docker-compose-2.29.7"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/nmd7y6p6ybagxr1jb9nkc8gxp9xy61kw-docker-compose-2.29.7",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/nmd7y6p6ybagxr1jb9nkc8gxp9xy61kw-docker-compose-2.29.7"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/16rixxab0y3ihlhf2gyhi89g16nn453p-docker-compose-2.29.7",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/16rixxab0y3ihlhf2gyhi89g16nn453p-docker-compose-2.29.7"
+        }
+      }
+    },
+    "docker@27.3.1": {
+      "last_modified": "2024-10-20T12:41:22Z",
+      "resolved": "github:NixOS/nixpkgs/ca30f584e18024baf39c395001262ed936f27ebd#docker",
+      "source": "devbox-search",
+      "version": "27.3.1",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/0ngqydb1vz2mw5qxv5sfnxhysviyg9cb-docker-27.3.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/0ngqydb1vz2mw5qxv5sfnxhysviyg9cb-docker-27.3.1"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/gvfb0vykd31ybvx8dd74mwgmnj7q1i3j-docker-27.3.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/gvfb0vykd31ybvx8dd74mwgmnj7q1i3j-docker-27.3.1"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/wvp56ylkx1j35258ykqd2qvg5dpmifix-docker-27.3.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/wvp56ylkx1j35258ykqd2qvg5dpmifix-docker-27.3.1"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/4f676q5nx4591n1b19vmkjwfw8s6i7lq-docker-27.3.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/4f676q5nx4591n1b19vmkjwfw8s6i7lq-docker-27.3.1"
+        }
+      }
+    },
     "go@1.23.1": {
       "last_modified": "2024-09-10T15:01:03Z",
       "resolved": "github:NixOS/nixpkgs/5ed627539ac84809c78b2dd6d26a5cebeb5ae269#go_1_23",

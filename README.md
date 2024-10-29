@@ -21,6 +21,7 @@ Scripts are custom commands that can be run using this project's environment. Th
 
 * [dev](#devbox-run-dev)
 * [fmt](#devbox-run-fmt)
+* [reset-data](#devbox-run-reset-data)
 
 ## Shell Init Hook
 The Shell Init Hook is a script that runs whenever the devbox environment is instantiated. It runs 
@@ -34,11 +35,15 @@ on `devbox shell` and on `devbox run`.
 * [go@1.23.1](https://www.nixhub.io/packages/go)
 * [air@1.52.3](https://www.nixhub.io/packages/air)
 * [prettierd@0.25.3](https://www.nixhub.io/packages/prettierd)
+* [nodePackages.prettier@3.3.3](https://www.nixhub.io/packages/nodePackages.prettier)
+* [docker@27.3.1](https://www.nixhub.io/packages/docker)
+* [docker-compose@2.29.7](https://www.nixhub.io/packages/docker-compose)
 
 ## Script Details
 
 ### devbox run dev
 ```sh
+docker-compose up -d
 air
 ```
 &ensp;
@@ -47,6 +52,12 @@ air
 ```sh
 gofmt -w **/*.go
 prettier -w **/*.html
+```
+&ensp;
+
+### devbox run reset-data
+```sh
+docker-compose down -v
 ```
 &ensp;
 

@@ -3,12 +3,15 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	"gametime/internal/utils"
+	"gametime/src/datastore"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -16,23 +19,9 @@ import (
 	"github.com/gofiber/template/html/v2"
 	"github.com/segmentio/ksuid"
 	"github.com/valyala/fasthttp"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type LobbyID string
-
-type GametimeAPI struct {
-	sessionStore   *session.Store
-	sseConnections map[LobbyID][]chan<- int
-	viewEngine     *html.Engine
-}
-
-type Clock struct {
-	ID            string
-	Name          string
-	Position      int
-	Increment     time.Duration
-	TimeRemaining time.Duration
-}
 
 type ApiStart struct {
 	DemoRedirect bool       `form:"demoredirect"`
@@ -45,8 +34,8 @@ type ApiClock struct {
 	InitialTime time.Duration `form:"initialTime"`
 }
 
-func (ac ApiClock) toClock(position int) Clock {
-	return Clock{
+func (ac ApiClock) toClock(position int) datastore.Clock {
+	return datastore.Clock{
 		ID:            ksuid.New().String(),
 		Name:          ac.Name,
 		Position:      position,
@@ -55,52 +44,24 @@ func (ac ApiClock) toClock(position int) Clock {
 	}
 }
 
-type GameState struct {
-	ActiveClockID string
-	NextClockID   string
-	Clocks        []Clock
+type GametimeAPI struct {
+	sessionStore   *session.Store
+	sseConnections map[string][]chan<- int
+	viewEngine     *html.Engine
+        db *datastore.GametimeDB
 }
 
-type GameConfig struct{}
 
-type Lobby struct {
-	ID     string
-	State  GameState
-	Config GameConfig
-}
-
-var base = make([]Clock, 0)
-
-var clockSlice = append(base,
-	Clock{
-		ID:            ksuid.New().String(),
-		Name:          "Hia",
-		Position:      0,
-		Increment:     time.Second * 15,
-		TimeRemaining: time.Second * 30,
-	},
-	Clock{
-		ID:            ksuid.New().String(),
-		Name:          "Fren",
-		Position:      1,
-		Increment:     time.Second * 30,
-		TimeRemaining: time.Second * 600,
-	},
-)
-
-func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Store) GametimeAPI {
+func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Store, dbStore *datastore.GametimeDB) *GametimeAPI {
 	gapi := GametimeAPI{
 
 		sessionStore:   sessionStore,
-		sseConnections: make(map[LobbyID][]chan<- int),
+		sseConnections: make(map[string][]chan<- int),
 		viewEngine:     engine,
+                db: dbStore,
 	}
-	fmt.Println("Uhhhh")
 
 	gapi.sseConnections["lobbyID"] = make([]chan<- int, 0)
-	fmt.Println("Yaaaah")
-
-	sessionStore.RegisterType(Lobby{})
 
 	// Register middlewares
 	app.Use(cors.New())
@@ -116,7 +77,16 @@ func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Stor
 
 	app.Get("/sse", gapi.sse)
 
-	return gapi
+	return &gapi
+}
+
+func (g *GametimeAPI) addSSEConnection(lobbyID string, ch chan<- int) {
+    _, ok := g.sseConnections[lobbyID]
+    if !ok {
+        g.sseConnections[lobbyID] = make([]chan<- int, 0)
+    }
+
+    g.sseConnections[lobbyID] = append(g.sseConnections[lobbyID], ch)
 }
 
 func htmxLocationMiddleware(c *fiber.Ctx) error {
@@ -126,8 +96,20 @@ func htmxLocationMiddleware(c *fiber.Ctx) error {
 }
 
 func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
-	// TODO: Filter connections to current lobby, invoking only those
-	for _, ch := range g.sseConnections["lobbyID"] {
+        clockID := c.Params("clockID")
+
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        defer cancel()
+
+        lobby, err := g.db.GetLobbyByClock(ctx, clockID)
+        if err != nil{
+            return err
+        }
+
+        // TODO: Persist state, how do we effectively track time elapsed?
+
+
+	for _, ch := range g.sseConnections[lobby.ID] {
 		ch <- 0
 	}
 	return nil
@@ -143,27 +125,34 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 	viewID := c.Query("view")
 	view := fmt.Sprintf("pages/lobby/view/%s", viewID)
 
+	lobbyID := c.Query("lobbyID")
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        defer cancel()
+
+        _, err := g.db.GetLobby(ctx, lobbyID)
+        if err != nil {
+            return err
+        }
+
 	ch := make(chan int)
-	// TODO: Dont use constant lobbyID here
-	g.sseConnections["lobbyID"] = append(g.sseConnections["lobbyID"], ch)
+	g.addSSEConnection(lobbyID, ch)
 
 	c.Status(fiber.StatusOK).Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
 		for {
 			select {
 			case <-ch:
-				lobby := Lobby{
-					ID: "lobbyID",
-					State: GameState{
-						ActiveClockID: clockSlice[0].ID,
-						NextClockID:   clockSlice[1].ID,
-						Clocks:        clockSlice,
-					},
-					Config: GameConfig{},
-				}
+                                ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+                                defer cancel()
+
+                                lobby, err := g.db.GetLobby(ctx, lobbyID)
+                                if err != nil {
+                                    log.Println(err)
+                                }
+
 
 				buff := bytes.NewBufferString("")
 				if err := g.viewEngine.Render(buff, view, lobby); err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					return
 				}
 
@@ -171,7 +160,7 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 				result = strings.ReplaceAll(result, "\n", " ")
 				fmt.Fprintf(w, "event: lobbyUpdate\ndata: %s\n\n", result)
 
-				err := w.Flush()
+				err = w.Flush()
 				if err != nil {
 					// Refreshing page in web browser will establish a new
 					// SSE connection, but only (the last) one is alive, so
@@ -219,19 +208,22 @@ func (g *GametimeAPI) postStart(c *fiber.Ctx) error {
 
 	newLobbyId := ksuid.New().String()
 
-	// TODO: Persist lobby in datastore
 	dbClocks := utils.MapWithIndex(clocks.Clocks, ApiClock.toClock)
 
-	lobby := Lobby{
+	lobby := datastore.Lobby{
 		ID: newLobbyId,
-		State: GameState{
+		State: datastore.GameState{
 			ActiveClockID: dbClocks[0].ID,
 			NextClockID:   dbClocks[1].ID,
 			Clocks:        dbClocks,
 		},
-		Config: GameConfig{},
+		Config: datastore.GameConfig{},
 	}
 	log.Println(lobby)
+
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        defer cancel()
+        err = g.db.SaveLobby(ctx, lobby)
 
 	session.Set("lobbyId", newLobbyId)
 	session.Save()
@@ -253,34 +245,15 @@ func (g *GametimeAPI) postStart(c *fiber.Ctx) error {
 func (g *GametimeAPI) getLobbyViewSelect(c *fiber.Ctx) error {
 	lobbyId := c.Params("lobbyId")
 
-	clockSlice := make([]Clock, 0)
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        defer cancel()
 
-	clockSlice = append(clockSlice,
-		Clock{
-			ID:            ksuid.New().String(),
-			Name:          "Hia",
-			Position:      0,
-			Increment:     time.Second * 15,
-			TimeRemaining: time.Second * 300,
-		},
-		Clock{
-			ID:            ksuid.New().String(),
-			Name:          "Fren",
-			Position:      1,
-			Increment:     time.Second * 30,
-			TimeRemaining: time.Second * 600,
-		},
-	)
-
-	// TODO: Load from datastore
-	lobby := Lobby{
-		ID: lobbyId,
-		State: GameState{
-			Clocks: clockSlice,
-		},
-		Config: GameConfig{},
-	}
-	log.Println(lobby)
+        lobby, err := g.db.GetLobby(ctx, lobbyId)
+        if errors.Is(err, mongo.ErrNoDocuments) {
+            return c.Redirect("/start")
+        } else if err != nil {
+            log.Fatal(err)
+        }
 
 	return c.Render("pages/lobby/select", lobby, "layouts/main")
 }
@@ -289,17 +262,15 @@ func (g *GametimeAPI) getLobbyView(c *fiber.Ctx) error {
 	lobbyId := c.Params("lobbyId")
 	viewId := c.Params("viewId")
 
-	// TODO: Load from datastore
-	lobby := Lobby{
-		ID: lobbyId,
-		State: GameState{
-			ActiveClockID: clockSlice[0].ID,
-			NextClockID:   clockSlice[1].ID,
-			Clocks:        clockSlice,
-		},
-		Config: GameConfig{},
-	}
-	log.Println(lobby)
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        defer cancel()
+
+        lobby, err := g.db.GetLobby(ctx, lobbyId)
+        if errors.Is(err, mongo.ErrNoDocuments) {
+            return c.Redirect("/start")
+        } else if err != nil {
+            log.Fatal(err)
+        }
 
 	view := fmt.Sprintf("pages/lobby/view/%s", viewId)
 	return c.Render(view, lobby, "layouts/main", "layouts/viewcontainer")
