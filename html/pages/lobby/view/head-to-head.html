@@ -7,10 +7,7 @@
   <p>Hia! Your lobby ID is: {{.ID}}</p>
   <p>Red indicates an active clock</p>
   <p>Clicking the active clock makes a POST request to /clock/press/:clockID</p>
-  <p>
-    Not a built endpoint yet, but imagine it does some logic to update the data
-    model, advancing positions, and then re-rendering the clock
-  </p>
+  <p>This will send out an event to all clients (soon scoped to lobby), having them refresh their lobby state</p>
 
   {{range .State.Clocks}}
 
@@ -61,6 +58,10 @@
   }
 
   htmx.onLoad((evt) => {
+    // BUG: If you mash the active clock button, we dont remove the listeners correctly
+    // Perhaps we can solve this with an hx-on attr on the clock? When its removed I assume its unregistered
+    // Maybe we could also make advanceClocks stateful. Rather than getting the amount of time passed from the time-passing event,
+    // it can keep track of when it last received the event, and use the difference to update. Could lead to unintended consequences.
     GlobalTimer.addEventListener("time-passing", advanceClocks);
     htmx.on("htmx:beforeSwap", (evt) =>
       GlobalTimer.removeEventListener("time-passing", advanceClocks),
