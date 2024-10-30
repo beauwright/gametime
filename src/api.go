@@ -51,9 +51,16 @@ func (ac ApiClock) toClock() datastore.Clock {
 	}
 }
 
+type channelEvent int
+
+const (
+	HEARTBEAT     channelEvent = 10
+	LOBBY_UPDATED              = 20
+)
+
 type GametimeAPI struct {
 	sessionStore   *session.Store
-	sseConnections map[string][]chan<- int
+	sseConnections map[string][]chan<- channelEvent
 	viewEngine     *html.Engine
 	db             *datastore.GametimeDB
 }
@@ -62,12 +69,10 @@ func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Stor
 	gapi := GametimeAPI{
 
 		sessionStore:   sessionStore,
-		sseConnections: make(map[string][]chan<- int),
+		sseConnections: make(map[string][]chan<- channelEvent),
 		viewEngine:     engine,
 		db:             dbStore,
 	}
-
-	gapi.sseConnections["lobbyID"] = make([]chan<- int, 0)
 
 	// Register middlewares
 	app.Use(cors.New())
@@ -86,10 +91,10 @@ func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Stor
 	return &gapi
 }
 
-func (g *GametimeAPI) addSSEConnection(lobbyID string, ch chan<- int) {
+func (g *GametimeAPI) addSSEConnection(lobbyID string, ch chan<- channelEvent) {
 	_, ok := g.sseConnections[lobbyID]
 	if !ok {
-		g.sseConnections[lobbyID] = make([]chan<- int, 0)
+		g.sseConnections[lobbyID] = make([]chan<- channelEvent, 0)
 	}
 
 	g.sseConnections[lobbyID] = append(g.sseConnections[lobbyID], ch)
@@ -127,7 +132,7 @@ func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
 	}
 
 	for _, ch := range g.sseConnections[lobby.ID] {
-		ch <- 0
+		ch <- LOBBY_UPDATED
 	}
 	return nil
 }
@@ -157,40 +162,70 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 		g.db.StartLobby(ctx, lobbyID)
 	}
 
-	ch := make(chan int)
+	chCtx, chCancel := context.WithCancel(context.Background())
+	ch := make(chan channelEvent)
 	g.addSSEConnection(lobbyID, ch)
+
+	// Heartbeat for the SSE connection, checks for closed connections.
+	// Prevents us from keeping a ton of dead connections on hand
+	go func() {
+		for {
+			select {
+			case <-chCtx.Done():
+				return
+			case <-time.After(time.Second * 30):
+				ch <- HEARTBEAT
+			}
+		}
+	}()
 
 	c.Status(fiber.StatusOK).Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
 		for {
 			select {
-			case <-ch:
-				ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-				defer cancel()
+			case msg := <-ch:
+				if msg == HEARTBEAT {
+					fmt.Fprintf(w, "event: heartbeat\n\n")
+					err = w.Flush()
+					if err != nil {
+						// Refreshing page in web browser will establish a new
+						// SSE connection, but only (the last) one is alive, so
+						// dead connections must be closed here.
+						log.Printf("Heartbeat failed: %v. Closing http connection.\n", err)
+						chCancel()
+						break
+					}
 
-				lobby, err := g.db.GetLobby(ctx, lobbyID)
-				if err != nil {
-					log.Println(err)
+				} else if msg == LOBBY_UPDATED {
+					ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+					defer cancel()
+
+					lobby, err := g.db.GetLobby(ctx, lobbyID)
+					if err != nil {
+						log.Println(err)
+					}
+
+					buff := bytes.NewBufferString("")
+					if err := g.viewEngine.Render(buff, view, lobby); err != nil {
+						log.Println(err)
+						return
+					}
+
+					result := buff.String()
+					result = strings.ReplaceAll(result, "\n", " ")
+					fmt.Fprintf(w, "event: lobbyUpdate\ndata: %s\n\n", result)
+
+					err = w.Flush()
+					if err != nil {
+						// Refreshing page in web browser will establish a new
+						// SSE connection, but only (the last) one is alive, so
+						// dead connections must be closed here.
+						fmt.Printf("Error while flushing: %v. Closing http connection.\n", err)
+
+						break
+					}
+
 				}
 
-				buff := bytes.NewBufferString("")
-				if err := g.viewEngine.Render(buff, view, lobby); err != nil {
-					log.Println(err)
-					return
-				}
-
-				result := buff.String()
-				result = strings.ReplaceAll(result, "\n", " ")
-				fmt.Fprintf(w, "event: lobbyUpdate\ndata: %s\n\n", result)
-
-				err = w.Flush()
-				if err != nil {
-					// Refreshing page in web browser will establish a new
-					// SSE connection, but only (the last) one is alive, so
-					// dead connections must be closed here.
-					fmt.Printf("Error while flushing: %v. Closing http connection.\n", err)
-
-					break
-				}
 			}
 		}
 	}))
