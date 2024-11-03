@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"gametime/internal/utils"
-
+	"github.com/gofiber/fiber/v2/log"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -54,13 +53,25 @@ func New(connString string) (*GametimeDB, error) {
     if err != nil {
         return nil, err
     }
-    ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+    defer dbClient.Disconnect(context.Background())
+
+    ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
     defer cancel()
 
-    // TODO: Rather than ping, just try to create our indexes. Which accomplishes the same thing.
-    err = dbClient.Ping(ctx, readpref.Primary())
-    if err != nil {
-        return nil, err
+    indexModels := make([]mongo.IndexModel, 2)
+    indexModels[0] = mongo.IndexModel{
+            Keys: bson.D{{Key: "id", Value: 1}},
+        }
+    indexModels[1] = mongo.IndexModel{
+            Keys: bson.D{{Key: "state.clocks.id", Value: 1}},
+        }
+
+    log.Info("ensuring indexes are created. (gametime.lobbies)")
+    for _, x := range indexModels {
+        _, err := dbClient.Database(database).Collection(lobbies).Indexes().CreateOne(ctx, x)
+        if err != nil {
+            return nil, err
+        }
     }
 
     return &GametimeDB{
