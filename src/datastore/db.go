@@ -14,98 +14,10 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
-type ClockEventType string
-const (
-	START ClockEventType = "START"
-	STOP        = "STOP"
-	ADD        = "ADD"
-	SUB        = "SUB"
-)
-
-type ClockState string
-const (
-    RUNNING ClockState = "RUNNING"
-    STOPPED  = "STOPPED"
-)
-
-type ClockEvent struct {
-    EventType ClockEventType
-    Timestamp time.Time
-    // The amount of time remaining on the clock when emitted
-    TimeRemaining time.Duration
-    Detail interface{}
-}
-
-type Clock struct {
-	ID            string
-	Name          string
-        EventLog      []ClockEvent
-	Increment     time.Duration
-
-        // TODO: Either remove these fields, replacing with computations from the EventLog, or ensure we update these always
-	TimeRemaining time.Duration
-	InitialTime time.Duration
-}
-
-func (c *Clock) latestStateChange() ClockEvent {
-    relevant := utils.Filter(c.EventLog, func(ce ClockEvent) bool {
-        return ce.EventType == START || ce.EventType == STOP
-    })
-
-    return relevant[len(relevant)-1]
-}
-
-func (c *Clock) State() ClockState {
-    latest := c.latestStateChange()
-
-    if latest.EventType == START {
-        return RUNNING
-    } else {
-        return STOPPED
-    }
-}
-
-func (c *Clock) getStopEvent() (*ClockEvent, error) {
-    if c.State() != RUNNING {
-        return nil, errors.New("clock is not running")
-    }
-
-    latest := c.latestStateChange()
-
-    elapsed := time.Now().Sub(latest.Timestamp)
-    newRemaining := latest.TimeRemaining - elapsed
-
-
-    return &ClockEvent{
-        EventType: STOP,
-        Timestamp: time.Now(),
-        TimeRemaining: newRemaining,
-    }, nil
-}
-
-func (c *Clock) getStartEvent() (*ClockEvent, error) {
-    if c.State() != STOPPED {
-        return nil, errors.New("clock is not stopped")
-    }
-
-    latest := c.latestStateChange()
-
-    elapsed := time.Now().Sub(latest.Timestamp)
-    newRemaining := latest.TimeRemaining - elapsed
-
-
-    return &ClockEvent{
-        EventType: START,
-        Timestamp: time.Now(),
-        TimeRemaining: newRemaining,
-    }, nil
-}
-
-
 type GameState struct {
 	ActiveClockID string
 	NextClockID   string
-        Running bool
+    Running bool
 	Clocks        []Clock
 }
 
@@ -165,7 +77,7 @@ func (db *GametimeDB) SaveLobby(ctx context.Context, lobby Lobby) error {
 }
 
 func (db *GametimeDB) GetLobby(ctx context.Context, lobbyID string) (*Lobby, error) {
-    filter := bson.D{{"id", lobbyID}}
+    filter := bson.D{{Key: "id", Value: lobbyID}}
 
     var result Lobby
     err := db.db.Database(database).Collection(lobbies).FindOne(ctx, filter).Decode(&result)
@@ -177,7 +89,7 @@ func (db *GametimeDB) GetLobby(ctx context.Context, lobbyID string) (*Lobby, err
 }
 
 func (db *GametimeDB) GetLobbyByClock(ctx context.Context, clockID string) (*Lobby, error) {
-    filter := bson.D{{"state.clocks.id", clockID}}
+    filter := bson.D{{Key: "state.clocks.id", Value: clockID}}
 
     var result Lobby
     err := db.db.Database(database).Collection(lobbies).FindOne(ctx, filter).Decode(&result)
@@ -215,18 +127,18 @@ func (db *GametimeDB) AdvanceLobby(ctx context.Context, clockID string) (*Lobby,
     upcomingClock := lobby.State.Clocks[upcomingIndex]
 
 
-    filter := bson.D{{"id", lobby.ID}}
+    filter := bson.D{{Key: "id", Value: lobby.ID}}
     update := bson.D{
         {
-            "$push", bson.D{
-                bson.E{stopPath, stopEvent},
-                bson.E{startPath, startEvent},
+            Key: "$push", Value: bson.D{
+                bson.E{Key: stopPath, Value: stopEvent},
+                bson.E{Key: startPath, Value: startEvent},
             },
         },
         {
-            "$set", bson.D{
-                bson.E{"state.activeclockid", lobby.State.NextClockID},
-                bson.E{"state.nextclockid", upcomingClock.ID},
+            Key: "$set", Value: bson.D{
+                bson.E{Key: "state.activeclockid", Value: lobby.State.NextClockID},
+                bson.E{Key: "state.nextclockid", Value: upcomingClock.ID},
             },
         },
     }
@@ -264,16 +176,16 @@ func (db *GametimeDB) StartLobby(ctx context.Context, lobbyID string) error {
     }
 
 
-    filter := bson.D{{"id", lobby.ID}}
+    filter := bson.D{{Key: "id", Value: lobby.ID}}
     update := bson.D{
         {
-            "$push", bson.D{
-                bson.E{path, startEvent},
+            Key: "$push", Value: bson.D{
+                bson.E{Key: path, Value: startEvent},
             },
         },
         {
-            "$set", bson.D{
-                bson.E{"state.running", true},
+            Key: "$set", Value: bson.D{
+                bson.E{Key: "state.running", Value: true},
             },
         },
     }

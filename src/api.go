@@ -117,11 +117,13 @@ func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
 		return err
 	}
 
-	// TODO: Verify lobby is running, not paused
+    if !lobby.State.Running {
+        return errors.New("lobby is paused")
 
+    }
 	_, clock := lobby.ClockByID(clockID)
 	if clock.State() != datastore.RUNNING {
-		return errors.New("clock is not running")
+		return errors.New("clock is not active")
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
