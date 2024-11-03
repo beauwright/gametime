@@ -25,21 +25,21 @@
     return `${min}:${seconds}`;
   }
 
-  function render(elem){
-      const endAt = parseInt(elem.value);
-      elem.innerHTML = clockDisplay(endAt - Date.now());
+  function render(elem) {
+    const endAt = parseInt(elem.value);
+    elem.innerHTML = clockDisplay(endAt - Date.now());
   }
 
   function renderAllClocks() {
-     Array.from(htmx.findAll(".clock")).map(render);
+    Array.from(htmx.findAll(".clock")).map(render);
   }
 
   function renderActiveClocks(evt) {
-       Array.from(htmx.findAll(".active")).map(render);
+    Array.from(htmx.findAll(".active")).map(render);
   }
 
   htmx.onLoad((evt) => {
-    renderAllClocks()
+    renderAllClocks();
     GlobalTimer.addEventListener("tick", renderActiveClocks);
   });
 </script>
