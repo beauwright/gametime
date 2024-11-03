@@ -31,13 +31,12 @@
   }
 
   function renderAllClocks() {
-    Array.from(htmx.findAll(".clock")).map(render);
+    [...htmx.findAll(".clock")].map(render);
   }
 
   function renderActiveClocks(evt) {
-    Array.from(htmx.findAll(".active")).map(render);
+    [...htmx.findAll(".active")].map(render);
   }
-
   htmx.onLoad((evt) => {
     renderAllClocks();
     GlobalTimer.addEventListener("tick", renderActiveClocks);

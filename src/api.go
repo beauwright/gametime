@@ -39,6 +39,7 @@ func (ac ApiClock) toClock() datastore.Clock {
 	eventLog[0] = datastore.ClockEvent{
 		EventType: datastore.STOP,
 		Timestamp: time.Now(),
+        RemainingTime: time.Second * ac.InitialTime,
 	}
 
 	return datastore.Clock{
@@ -46,8 +47,7 @@ func (ac ApiClock) toClock() datastore.Clock {
 		Name:           ac.Name,
 		EventLog:       eventLog,
 		Increment:      time.Second * ac.Increment,
-		EndTime:        time.Now().Add(time.Second * ac.InitialTime),
-		InitialEndTime: time.Now().Add(time.Second * ac.InitialTime),
+        InitialTime: time.Second * ac.InitialTime,
 	}
 }
 

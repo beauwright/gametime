@@ -23,16 +23,20 @@ const (
 type ClockEvent struct {
     EventType ClockEventType
     Timestamp time.Time
+    RemainingTime time.Duration
     // The amount of time remaining on the clock when emitted
     Detail interface{}
 }
 
 func (c *Clock) RemainingTime(relativeTo *ClockEvent) time.Duration {
-    if relativeTo == nil {
-        relativeTo = &c.EventLog[len(c.EventLog)-1]
-    }
+    return c.EventLog[len(c.EventLog)-1].RemainingTime
+}
 
-    return c.EndTime.Sub(relativeTo.Timestamp)
+/// EndTime gets the projected end timestamp if the clock continuously runs without stopping
+func (c *Clock) EndTime() time.Time {
+    latestChange := c.latestStateChange()
+    latestEvent := c.EventLog[len(c.EventLog)-1]
+    return latestChange.Timestamp.Add(latestEvent.RemainingTime)
 }
 
 type Clock struct {
@@ -40,8 +44,7 @@ type Clock struct {
 	Name          string
     EventLog      []ClockEvent
 	Increment     time.Duration
-    EndTime time.Time
-	InitialEndTime time.Time
+	InitialTime time.Duration
 }
 
 var (
