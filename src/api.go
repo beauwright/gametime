@@ -36,20 +36,23 @@ type ApiClock struct {
 func (ac ApiClock) toClock() datastore.Clock {
 	eventLog := make([]datastore.ClockEvent, 1)
 	eventLog[0] = datastore.ClockEvent{
-		EventType:     datastore.STOP,
-		Timestamp:     time.Now(),
-		TimeRemaining: time.Second * ac.InitialTime,
+		EventType: datastore.STOP,
+		Timestamp: time.Now(),
 	}
 
 	return datastore.Clock{
-		ID:            ksuid.New().String(),
-		Name:          ac.Name,
-		EventLog:      eventLog,
-		Increment:     time.Second * ac.Increment,
-		InitialTime:   time.Second * ac.InitialTime,
-		TimeRemaining: time.Second * ac.InitialTime,
+		ID:             ksuid.New().String(),
+		Name:           ac.Name,
+		EventLog:       eventLog,
+		Increment:      time.Second * ac.Increment,
+		EndTime:        time.Now().Add(ac.InitialTime),
+		InitialEndTime: time.Now().Add(ac.InitialTime),
 	}
 }
+
+var (
+	ErrLobbyIsPaused = errors.New("lobby is paused")
+)
 
 type channelEvent int
 
@@ -117,13 +120,13 @@ func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
 		return err
 	}
 
-    if !lobby.State.Running {
-        return errors.New("lobby is paused")
+	if !lobby.State.Running {
+		return ErrLobbyIsPaused
 
-    }
+	}
 	_, clock := lobby.ClockByID(clockID)
 	if clock.State() != datastore.RUNNING {
-		return errors.New("clock is not active")
+		return datastore.ErrClockIsNotActive
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
@@ -133,6 +136,9 @@ func (g *GametimeAPI) clockPress(c *fiber.Ctx) error {
 		return err
 	}
 
+	// TODO: In addition to shipping out to these goroutines, we will need to ship to some event system.
+	// This allows us to utilize a load balancer or some form of serverless scaling and not require everyone to use the same node.
+	// Could be something like rabbitMQ, or kafka. I wonder if we could use something in mongo, like a collection watch. I dunno the refresh rate
 	for _, ch := range g.sseConnections[lobby.ID] {
 		ch <- LOBBY_UPDATED
 	}

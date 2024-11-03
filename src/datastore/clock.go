@@ -36,6 +36,11 @@ type Clock struct {
 	InitialEndTime time.Time
 }
 
+var (
+    ErrClockIsNotActive = errors.New("clock is not active")
+    ErrClockIsAlreadyActive = errors.New("clock is already active")
+)
+
 func (c *Clock) latestStateChange() ClockEvent {
     relevant := utils.Filter(c.EventLog, func(ce ClockEvent) bool {
         return ce.EventType == START || ce.EventType == STOP
@@ -56,7 +61,7 @@ func (c *Clock) State() ClockState {
 
 func (c *Clock) getStopEvent() (*ClockEvent, error) {
     if c.State() != RUNNING {
-        return nil, errors.New(ClockIsNotActive)
+        return nil, ErrClockIsNotActive
     }
 
     return &ClockEvent{
@@ -67,7 +72,7 @@ func (c *Clock) getStopEvent() (*ClockEvent, error) {
 
 func (c *Clock) getStartEvent() (*ClockEvent, error) {
     if c.State() != STOPPED {
-        return nil, errors.New(ClockIsAlreadyActive)
+        return nil, ErrClockIsAlreadyActive
     }
 
     return &ClockEvent{
@@ -75,5 +80,4 @@ func (c *Clock) getStartEvent() (*ClockEvent, error) {
         Timestamp: time.Now(),
     }, nil
 }
-
 
