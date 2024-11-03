@@ -16,7 +16,7 @@
 
       const GlobalTimer = new EventTarget();
       setInterval(() => {
-        const timePassing = new CustomEvent("time-passing", {
+        const timePassing = new CustomEvent("tick", {
           detail: INTERVAL_MS,
         });
         GlobalTimer.dispatchEvent(timePassing);

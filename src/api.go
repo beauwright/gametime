@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+    log "github.com/sirupsen/logrus"
 	"strings"
 	"time"
 
@@ -15,6 +15,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/template/html/v2"
 	"github.com/segmentio/ksuid"
@@ -45,8 +46,8 @@ func (ac ApiClock) toClock() datastore.Clock {
 		Name:           ac.Name,
 		EventLog:       eventLog,
 		Increment:      time.Second * ac.Increment,
-		EndTime:        time.Now().Add(ac.InitialTime),
-		InitialEndTime: time.Now().Add(ac.InitialTime),
+		EndTime:        time.Now().Add(time.Second * ac.InitialTime),
+		InitialEndTime: time.Now().Add(time.Second * ac.InitialTime),
 	}
 }
 
@@ -78,6 +79,7 @@ func RegisterAPI(app *fiber.App, engine *html.Engine, sessionStore *session.Stor
 	}
 
 	// Register middlewares
+    app.Use(recover.New())
 	app.Use(cors.New())
 	app.Use(htmxLocationMiddleware)
 
@@ -187,6 +189,8 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 		}
 	}()
 
+    // For observability
+    connectionId := ksuid.New()
 	c.Status(fiber.StatusOK).Context().SetBodyStreamWriter(fasthttp.StreamWriter(func(w *bufio.Writer) {
 		for {
 			select {
@@ -195,10 +199,12 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 					fmt.Fprintf(w, "event: heartbeat\n\n")
 					err = w.Flush()
 					if err != nil {
-						// Refreshing page in web browser will establish a new
-						// SSE connection, but only (the last) one is alive, so
-						// dead connections must be closed here.
-						log.Printf("Heartbeat failed: %v. Closing http connection.\n", err)
+                        // This is a proactive approach to check every once in a while if the connection is dead
+                        // So we dont need to wait for a flush event, potentially holding on to stale connections
+						log.WithFields(log.Fields{
+                            "err": err,
+                            "connectionId": connectionId,
+                        }).Info("SSE heartbeat failed. closing http connection")
 						chCancel()
 						break
 					}
@@ -209,12 +215,19 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 
 					lobby, err := g.db.GetLobby(ctx, lobbyID)
 					if err != nil {
-						log.Println(err)
+						log.WithFields(log.Fields{
+                            "err": err,
+                            "connectionId": connectionId,
+                        }).Error("error occurred while notifying of lobby update")
+                        return
 					}
 
 					buff := bytes.NewBufferString("")
 					if err := g.viewEngine.Render(buff, view, lobby); err != nil {
-						log.Println(err)
+						log.WithFields(log.Fields{
+                            "err": err,
+                            "connectionId": connectionId,
+                        }).Error("error occurred while notifying of lobby update")
 						return
 					}
 
@@ -227,8 +240,10 @@ func (g *GametimeAPI) sse(c *fiber.Ctx) error {
 						// Refreshing page in web browser will establish a new
 						// SSE connection, but only (the last) one is alive, so
 						// dead connections must be closed here.
-						fmt.Printf("Error while flushing: %v. Closing http connection.\n", err)
-
+						log.WithFields(log.Fields{
+                            "err": err,
+                            "connectionId": connectionId,
+                        }).Info("error while flushing. closing http connection.")
 						break
 					}
 
@@ -293,18 +308,11 @@ func (g *GametimeAPI) postStart(c *fiber.Ctx) error {
 	session.Set("lobbyId", newLobbyId)
 	session.Save()
 
-	if clocks.DemoRedirect == true {
-		log.Println("Hia")
-		newRoute := fmt.Sprintf("/lobby/%s/view", newLobbyId)
-		log.Println(newRoute)
+    newRoute := fmt.Sprintf("/lobby/%s/view", newLobbyId)
 
-		// HTMX Redirect
-		c.Set("HX-Location", newRoute)
-		return c.SendStatus(204)
-	}
-
-	return c.Render("pages/start", fiber.Map{"Error": newLobbyId})
-
+    // HTMX Redirect
+    c.Set("HX-Location", newRoute)
+    return c.SendStatus(204)
 }
 
 func (g *GametimeAPI) getLobbyViewSelect(c *fiber.Ctx) error {
@@ -317,7 +325,8 @@ func (g *GametimeAPI) getLobbyViewSelect(c *fiber.Ctx) error {
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return c.Redirect("/start")
 	} else if err != nil {
-		log.Fatal(err)
+        userMessage := fmt.Sprintf("Error occurred while loading the lobby details. error: %s", err.Error())
+	    return errors.New(userMessage)
 	}
 
 	return c.Render("pages/lobby/select", lobby, "layouts/main")
@@ -334,7 +343,8 @@ func (g *GametimeAPI) getLobbyView(c *fiber.Ctx) error {
 	if errors.Is(err, mongo.ErrNoDocuments) {
 		return c.Redirect("/start")
 	} else if err != nil {
-		log.Fatal(err)
+        userMessage := fmt.Sprintf("Error occurred while loading the lobby details. error: %s", err.Error())
+	    return errors.New(userMessage)
 	}
 
 	view := fmt.Sprintf("pages/lobby/view/%s", viewId)

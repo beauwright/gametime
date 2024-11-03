@@ -27,6 +27,14 @@ type ClockEvent struct {
     Detail interface{}
 }
 
+func (c *Clock) RemainingTime(relativeTo *ClockEvent) time.Duration {
+    if relativeTo == nil {
+        relativeTo = &c.EventLog[len(c.EventLog)-1]
+    }
+
+    return c.EndTime.Sub(relativeTo.Timestamp)
+}
+
 type Clock struct {
 	ID            string
 	Name          string

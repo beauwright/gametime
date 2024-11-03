@@ -52,7 +52,6 @@ func New(connString string) (*GametimeDB, error) {
     if err != nil {
         return nil, err
     }
-    defer dbClient.Disconnect(context.Background())
 
     ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
     defer cancel()
@@ -73,6 +72,7 @@ func New(connString string) (*GametimeDB, error) {
         }
     }
 
+    log.Info("database connected")
     return &GametimeDB{
         db: *dbClient,
 

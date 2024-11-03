@@ -10,18 +10,11 @@
 
 <button
   id="{{.ID}}"
-  value="{{.TimeRemaining.Milliseconds}}"
-  {{if
-  eq
-  .ID
-  $.State.ActiveClockID}}
+  value="{{.EndTime.UnixMilli}}"
+  class="clock {{if eq .ID $.State.ActiveClockID}}active{{end}}"
   hx-post="/clock/press/{{.ID}}"
   hx-swap="none"
-  class="active"
-  {{end}}
->
-  Clock {{.TimeRemaining}}
-</button>
+></button>
 
 <br />
 <br />
